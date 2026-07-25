@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useProfile } from "@/context/profile-context";
+import { useWorkspace } from "@/context/workspace-context";
 import { COUNTRIES } from "@/lib/countries";
 import { LANGUAGES } from "@/lib/languages";
 import { getJurisdictionPack } from "@/lib/jurisdiction-packs";
@@ -11,8 +12,17 @@ import type { UserProfile } from "@/lib/profile";
 export function SettingsForm() {
   const router = useRouter();
   const { profile, updateProfile, resetProfile } = useProfile();
+  const {
+    workspacePath,
+    stats,
+    progress,
+    pickWorkspace,
+    reindex,
+    isDesktop,
+  } = useWorkspace();
   const [draft, setDraft] = useState<UserProfile | null>(profile);
   const [saved, setSaved] = useState(false);
+  const [workspaceBusy, setWorkspaceBusy] = useState(false);
 
   useEffect(() => {
     setDraft(profile);
@@ -22,21 +32,39 @@ export function SettingsForm() {
 
   const pack = getJurisdictionPack(draft.countryCode);
 
-  function onSubmit(e: FormEvent) {
+  async function onSubmit(e: FormEvent) {
     e.preventDefault();
     if (!draft) return;
-    updateProfile({ ...draft });
+    await updateProfile({ ...draft });
     setSaved(true);
     window.setTimeout(() => setSaved(false), 2000);
   }
 
-  function onReset() {
-    resetProfile();
+  async function onReset() {
+    await resetProfile();
     router.push("/onboarding");
   }
 
+  async function onChangeWorkspace() {
+    setWorkspaceBusy(true);
+    try {
+      await pickWorkspace();
+    } finally {
+      setWorkspaceBusy(false);
+    }
+  }
+
+  async function onReindex() {
+    setWorkspaceBusy(true);
+    try {
+      await reindex();
+    } finally {
+      setWorkspaceBusy(false);
+    }
+  }
+
   return (
-    <div className="mx-auto max-w-2xl px-5 py-8 md:px-8">
+    <div className="mx-auto max-w-2xl overflow-y-auto px-5 py-8 md:px-8">
       <header className="mb-8">
         <p className="text-xs uppercase tracking-[0.18em] text-[var(--accent)]">
           Preferences
@@ -46,10 +74,49 @@ export function SettingsForm() {
         </h1>
         <p className="mt-2 text-sm text-[var(--muted)]">
           Country choice controls which official law sources Counsilio cites.
+          Workspace is your local document source.
         </p>
       </header>
 
-      <form onSubmit={onSubmit} className="space-y-5">
+      <section className="mb-8 rounded-xl border border-[var(--line)] bg-[var(--panel)] p-4">
+        <p className="text-xs uppercase tracking-[0.14em] text-[var(--muted)]">
+          Workspace
+        </p>
+        <p className="mt-2 break-all font-mono text-xs text-[var(--ink)]">
+          {workspacePath ?? "No folder selected"}
+        </p>
+        {stats && (
+          <p className="mt-2 text-xs text-[var(--muted)]">
+            {stats.fileCount} indexed file{stats.fileCount === 1 ? "" : "s"}
+            {stats.updatedAt
+              ? ` · updated ${new Date(stats.updatedAt).toLocaleString()}`
+              : ""}
+            {progress?.phase === "extracting"
+              ? ` · indexing ${progress.processed}/${progress.total}`
+              : ""}
+          </p>
+        )}
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button
+            type="button"
+            className="btn-primary disabled:opacity-40"
+            disabled={!isDesktop || workspaceBusy}
+            onClick={() => void onChangeWorkspace()}
+          >
+            {workspaceBusy ? "Working…" : "Change folder"}
+          </button>
+          <button
+            type="button"
+            className="btn-ghost disabled:opacity-40"
+            disabled={!isDesktop || !workspacePath || workspaceBusy}
+            onClick={() => void onReindex()}
+          >
+            Re-index
+          </button>
+        </div>
+      </section>
+
+      <form onSubmit={(e) => void onSubmit(e)} className="space-y-5">
         <label className="block">
           <span className="label">Full name</span>
           <input
@@ -156,7 +223,11 @@ export function SettingsForm() {
           <button type="submit" className="btn-primary">
             Save changes
           </button>
-          <button type="button" onClick={onReset} className="btn-ghost">
+          <button
+            type="button"
+            onClick={() => void onReset()}
+            className="btn-ghost"
+          >
             Reset & re-onboard
           </button>
           {saved && (

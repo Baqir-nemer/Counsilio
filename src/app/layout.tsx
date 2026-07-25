@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Fraunces, Manrope } from "next/font/google";
 import { ProfileProvider } from "@/context/profile-context";
+import { WorkspaceProvider } from "@/context/workspace-context";
 import "./globals.css";
 
 const display = Fraunces({
@@ -30,7 +31,9 @@ export default function RootLayout({
       className={`${display.variable} ${body.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col font-sans">
-        <ProfileProvider>{children}</ProfileProvider>
+        <ProfileProvider>
+          <WorkspaceProvider>{children}</WorkspaceProvider>
+        </ProfileProvider>
       </body>
     </html>
   );

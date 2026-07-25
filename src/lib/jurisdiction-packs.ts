@@ -265,6 +265,31 @@ export const JURISDICTION_PACKS: Record<string, JurisdictionPack> = {
   },
 };
 
-export function getJurisdictionPack(countryCode: string): JurisdictionPack | undefined {
-  return JURISDICTION_PACKS[countryCode];
+export function getJurisdictionPack(countryCode: string): JurisdictionPack {
+  const pack = JURISDICTION_PACKS[countryCode];
+  if (pack) return pack;
+
+  return {
+    countryCode,
+    citationNote:
+      "Prefer primary official legislation portals and apex-court publications for this jurisdiction. Verify currency and territorial scope before relying on citations.",
+    sources: [
+      {
+        title: "WorldLII — World Legal Information Institute",
+        url: "https://www.worldlii.org/",
+        publisher: "WorldLII",
+      },
+      {
+        title: "GlobaLex — Foreign & Comparative Law",
+        url: "https://www.nyulawglobal.org/globalex/",
+        publisher: "NYU Law",
+      },
+      {
+        title: "UN Treaty Collection",
+        url: "https://treaties.un.org/",
+        publisher: "United Nations",
+      },
+    ],
+  };
 }
+

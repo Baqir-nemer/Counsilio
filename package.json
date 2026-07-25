@@ -2,25 +2,67 @@
   "name": "counsilio",
   "version": "0.1.0",
   "private": true,
+  "description": "Jurisdiction-aware legal drafting assistant with a local workspace",
+  "author": "Counsilio",
+  "main": "dist-electron/main.js",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "concurrently -k -n next,tsc,electron -c blue,green,magenta \"next dev\" \"tsc -p tsconfig.electron.json --watch --preserveWatchOutput\" \"wait-on http://localhost:3000 dist-electron/main.js && ELECTRON_DEV=1 electronmon .\"",
+    "dev:ui": "next dev",
+    "build:ui": "next build",
+    "build:electron": "tsc -p tsconfig.electron.json",
+    "build": "npm run build:ui && npm run build:electron",
+    "dist": "npm run build && electron-builder",
+    "start": "ELECTRON_DEV=0 electron .",
     "lint": "eslint"
   },
   "dependencies": {
-    "next": "16.2.11",
-    "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "mammoth": "^1.12.0",
+    "pdf-parse": "^2.4.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "concurrently": "^10.0.4",
+    "electron": "^43.2.0",
+    "electron-builder": "^26.15.3",
+    "electronmon": "^2.0.4",
     "eslint": "^9",
     "eslint-config-next": "16.2.11",
+    "next": "^16.2.11",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wait-on": "^9.1.0"
+  },
+  "build": {
+    "appId": "com.counsilio.app",
+    "productName": "Counsilio",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "package.json",
+      {
+        "from": "dist-electron",
+        "to": "dist-electron",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "out",
+        "to": "out",
+        "filter": ["**/*"]
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": ["dmg", "dir"],
+      "identity": null
+    },
+    "dmg": {
+      "title": "Counsilio"
+    }
   }
 }

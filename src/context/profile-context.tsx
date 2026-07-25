@@ -21,8 +21,8 @@ type ProfileContextValue = {
   profile: UserProfile | null;
   ready: boolean;
   isOnboarded: boolean;
-  updateProfile: (next: UserProfile) => void;
-  resetProfile: () => void;
+  updateProfile: (next: UserProfile) => Promise<void>;
+  resetProfile: () => Promise<void>;
 };
 
 const ProfileContext = createContext<ProfileContextValue | null>(null);
@@ -32,17 +32,26 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    setProfile(loadProfile());
-    setReady(true);
+    let cancelled = false;
+    void (async () => {
+      const loaded = await loadProfile();
+      if (!cancelled) {
+        setProfile(loaded);
+        setReady(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const updateProfile = useCallback((next: UserProfile) => {
-    saveProfile(next);
+  const updateProfile = useCallback(async (next: UserProfile) => {
+    await saveProfile(next);
     setProfile(next);
   }, []);
 
-  const resetProfile = useCallback(() => {
-    clearProfile();
+  const resetProfile = useCallback(async () => {
+    await clearProfile();
     setProfile(null);
   }, []);
 

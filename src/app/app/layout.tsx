@@ -1,5 +1,5 @@
 import { RequireOnboarded } from "@/components/auth-gates";
-import { AppSidebar } from "@/components/app-sidebar";
+import { AppNavRail } from "@/components/app-sidebar";
 
 export default function AppLayout({
   children,
@@ -8,9 +8,9 @@ export default function AppLayout({
 }) {
   return (
     <RequireOnboarded>
-      <div className="flex min-h-screen flex-col md:h-screen md:flex-row md:overflow-hidden">
-        <AppSidebar />
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-[var(--paper)]/40">
+      <div className="flex h-screen flex-col overflow-hidden">
+        <AppNavRail />
+        <div className="flex min-h-0 min-w-0 flex-1 bg-[var(--paper)]/40">
           {children}
         </div>
       </div>

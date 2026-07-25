@@ -3,18 +3,23 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useProfile } from "@/context/profile-context";
+import { useWorkspace } from "@/context/workspace-context";
 
 export function RequireOnboarded({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { ready, isOnboarded } = useProfile();
+  const { ready: profileReady, isOnboarded } = useProfile();
+  const { ready: workspaceReady, hasWorkspace, isDesktop } = useWorkspace();
+
+  const ready = profileReady && workspaceReady;
+  const complete = isOnboarded && (!isDesktop || hasWorkspace);
 
   useEffect(() => {
-    if (ready && !isOnboarded) {
+    if (ready && !complete) {
       router.replace("/onboarding");
     }
-  }, [ready, isOnboarded, router]);
+  }, [ready, complete, router]);
 
-  if (!ready || !isOnboarded) {
+  if (!ready || !complete) {
     return (
       <div className="flex flex-1 items-center justify-center text-sm text-[var(--muted)]">
         Loading your workspace…
@@ -31,13 +36,17 @@ export function RedirectIfOnboarded({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { ready, isOnboarded } = useProfile();
+  const { ready: profileReady, isOnboarded } = useProfile();
+  const { ready: workspaceReady, hasWorkspace, isDesktop } = useWorkspace();
+
+  const ready = profileReady && workspaceReady;
+  const complete = isOnboarded && (!isDesktop || hasWorkspace);
 
   useEffect(() => {
-    if (ready && isOnboarded) {
+    if (ready && complete) {
       router.replace("/app");
     }
-  }, [ready, isOnboarded, router]);
+  }, [ready, complete, router]);
 
   if (!ready) {
     return (
@@ -47,7 +56,7 @@ export function RedirectIfOnboarded({
     );
   }
 
-  if (isOnboarded) return null;
+  if (complete) return null;
 
   return <>{children}</>;
 }
